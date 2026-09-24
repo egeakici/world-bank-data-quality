@@ -12,11 +12,12 @@ A deliberately small project: **one financier (IDA), one measure (gross disburse
 pip install -r requirements.txt
 python src/step1_prepare.py    # bronze -> silver, plus the fixed-rule layer
 python src/step2_spc.py        # the control charts
-python src/step3_evaluate.py   # how good is it? (synthetic injection)
+python src/review_alerts.py    # refresh the labelling sheet (labels/alert_labels.csv)
+python src/step3_evaluate.py   # how good is it? recall, precision, alert load -> ledger
 python src/step4_report.py     # figures + outputs/FINDINGS.md
 ```
 
-Everything lands in `outputs/`. Nothing writes back to the shared `data/` folder — the raw file stays raw.
+Generated results land in `outputs/` and are rebuilt on every run. Two things live outside it on purpose, because no script can rebuild them: `labels/` (human judgement) and `experiments/` (the history of the method). Nothing writes back to the shared `data/` folder — the raw file stays raw.
 
 ---
 
@@ -124,26 +125,65 @@ Two rules fire, not one:
 
 ---
 
-## Evaluating a detector when nothing is labelled
+## Measuring a detector when nothing is labelled
 
-No column in this dataset says "this row is wrong". Unsupervised, though, does not mean unevaluated. We make our own labels by breaking data we believe is clean:
+No column in this dataset says "this row is wrong". Unsupervised, though, does not mean unevaluated. Three numbers are tracked, because any one of them alone can be gamed — a detector that flags everything has perfect recall, one that flags nothing never raises a false alarm:
 
-| error type | recall (mean of 10 trials) | range | collateral alerts/trial |
+| number | question | where it comes from |
+|---|---|---|
+| **recall** | of the errors we plant, how many are caught? | synthetic injection, `step3_evaluate.py` |
+| **precision** | of the real alerts, how many were worth a look? | human labels, `labels/alert_labels.csv` |
+| **alert load** | how many alerts per year must someone read? | the clean run |
+
+### Recall — five planted error types
+
+We make our own labels by breaking data we believe is clean, one error per country, 10 trials each:
+
+| error type | what it simulates | recall (tuning) | recall (hold-out) |
 |---|---|---|---|
-| **spike** (×10 — an extra zero) | 74.4% | 57.7–91.3% | 15.6 |
-| **drop** (feed delivered nothing) | 87.5% | 81.5–95.7% | 18.8 |
+| `units_x1000` | thousands loaded as dollars | 98.2% | 97.2% |
+| `drop_to_zero` | the feed delivered nothing | 84.5% | 87.2% |
+| `spike_x10` | an extra zero typed | 74.4% | 79.1% |
+| `misstate_25pct` | value ×0.75 or ×1.25 | 9.9% | 11.9% |
+| `stale_repeat` | last year's figure re-delivered | **0.0%** | **0.0%** |
 
-Background load on untouched data: 62 alerts, 11 high severity.
+The bottom two rows are the point of having a catalogue. A 25% misstatement sits inside the ordinary year-to-year variation of most countries, so a 3σ chart structurally cannot see it. A stale repeat produces a growth of exactly 0% — which is *closer* to normal than most real years, so the chart will never flag it. That is not a tuning problem; it is a blind spot, and its fix belongs in the rule layer (`value == last year's value`), not in the chart. A catalogue with only the easy errors would have hidden both.
 
-Three things worth internalising here:
+**Tuning vs hold-out.** The injections are drawn from two seeds. Anything that gets tuned — the sigma multiplier, the windows — is tuned against the *tuning* draws only. The *hold-out* draws are run once per finished version and those are the numbers reported. Tune and score on the same draws and you measure how well you fitted your own test. The gap between the two columns above (74% vs 79% on the same method) is pure sampling noise, which is also a useful calibration: differences smaller than that between two versions are not evidence of anything.
 
-**The experiment design can lie to you.** The first version of this injected 200 errors at once — 35% of all monitored cells — and measured 54% recall on a 10× spike. The detector looked weak; the *experiment* was broken. Two injections in consecutive years of the same country partly cancel in a year-over-year chart. Real pipeline errors are rare events, so the test has to be rare events: one per country, repeated over 10 trials. → [step3_evaluate.py:37](src/step3_evaluate.py#L37)
+Three further rules the harness enforces, each learned the hard way:
 
-**Report the spread, not just the mean.** 74.4% with a range of 58–91% across draws is a very different claim from 74.4% measured once.
+- **Injections must be sparse.** The first version of this project injected 200 errors at once — 35% of all monitored cells — and measured 54% recall on a 10× spike. The detector looked weak; the *experiment* was broken. Two injections in consecutive years of the same country partly cancel in a year-over-year chart. Real pipeline errors are rare events, so the test is one per country. → [step3_evaluate.py](src/step3_evaluate.py)
+- **Never inject into the baseline.** If the corruption lands in Phase I, the limits *learn* it, widen, and then fail to flag it.
+- **Report the spread, not just the mean.** 74% with a range of 58–91% across draws is a very different claim from 74% measured once.
 
-**Never inject into the baseline.** If the corruption lands in Phase I, the control limits *learn* it, widen, and then fail to flag it — the detector would be grading itself on a chart it had already been fooled into accepting.
+Recall here is a **lower bound** on the obvious errors and an honest zero on the subtle ones.
 
-Recall here is a **lower bound**. Our synthetic errors are crude; a real error may be a 15% misstatement, which no 3-sigma chart on this data would catch.
+### Precision — human labels
+
+Only a person can say whether "Chad FY2021, −50%" deserved an analyst's morning. `review_alerts.py` writes every growth-chart alert to `labels/alert_labels.csv`, sorted by |z|, with an empty `label` column to fill with:
+
+| label | meaning |
+|---|---|
+| `investigate` | worth sending to an analyst — could be a data problem |
+| `explained` | real, but explained by a known event (COVID, conflict, a new IDA cycle) |
+| `noise` | ordinary variation the chart should not have flagged |
+
+From those, `step3_evaluate.py` reports **strict precision** (`investigate` / labelled), **lenient precision** (`investigate` + `explained` / labelled), and **precision@10** (the 10 highest-|z| alerts, the ones an analyst reads first — only reported once all 10 are labelled, since a precision computed on whichever alerts happened to get labelled is biased).
+
+The labels file is designed to survive the detector changing: labels are keyed on (country, fiscal year) rather than the method version, re-running the script merges instead of overwriting, and a label on an alert that no longer fires is kept with `currently_alerting = False`. No script is allowed to throw away human judgement.
+
+> **Status:** 0 of 62 alerts labelled. Precision is blank in the ledger until they are.
+
+### The ledger
+
+Every `step3_evaluate.py` run upserts one row into `experiments/ledger.csv`, keyed by (method version, split): the parameters it ran with, alert load, precision, and recall per error type. Re-running a version replaces its row rather than appending a duplicate. When the method changes, bump `METHOD_VERSION` in `config.py` (or pass `--version`), and "v2 is better than v1" becomes a claim with a row of evidence under it.
+
+```bash
+python src/step3_evaluate.py                                   # tuning draws
+python src/step3_evaluate.py --split holdout                   # once per finished version
+python src/step3_evaluate.py --version v2-rolling-baseline --note "10-year rolling window"
+```
 
 ---
 
@@ -173,13 +213,17 @@ src/config.py           every threshold and window, in one place
 src/spc_core.py         the maths: robust stats, limits, run rule, explanations
 src/step1_prepare.py    bronze -> silver, rule layer, coverage report
 src/step2_spc.py        chart A (level) and chart B (growth), alerts
-src/step3_evaluate.py   synthetic injection, recall, background load
+src/review_alerts.py    builds/merges the human labelling sheet
+src/step3_evaluate.py   recall (5 error types), precision, alert load -> ledger
 src/step4_report.py     figures + FINDINGS.md
+
+labels/alert_labels.csv       human labels for the alert queue (committed, hand-edited)
+experiments/ledger.csv        one row per method version x split (committed)
 
 outputs/FINDINGS.md     generated summary
 outputs/spc_alerts.csv  the alert queue, ranked by |robust z|
 outputs/spc_points.csv  every monitored point with its limits (audit trail)
 outputs/spc_not_charted.csv   what was skipped, and why
-outputs/evaluation.csv  recall numbers
+outputs/evaluation.csv  recall per error type, latest run
 outputs/series_coverage.csv   gaps in each country's year series
 ```

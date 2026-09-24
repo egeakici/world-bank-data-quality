@@ -22,7 +22,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
 from config import (SILVER_DIR, OUT_DIR, FIG_DIR, FINANCIER, MEASURE, INCOMPLETE_FY,
                     BASELINE_START_FY, BASELINE_END_FY, MONITOR_START_FY,
-                    MONITOR_END_FY, MIN_BASELINE_POINTS)
+                    MONITOR_END_FY, MIN_BASELINE_POINTS, LEDGER_CSV, ERROR_CATALOG)
 from spc_core import fit_chart
 from step2_spc import load_series, add_growth
 
@@ -210,9 +210,19 @@ def main():
     ]
     for _, r in alerts[alerts.chart == "B_growth"].head(10).iterrows():
         lines.append("- **{}** (z={:+.1f}) {}".format(r.severity, r.robust_z, r.explanation))
-    lines += ["", "## 3. Evaluation (synthetic injection)", "",
+    lines += ["", "## 3. Evaluation (synthetic injection, latest run)", "",
               md_table(ev.drop(columns=["example_misses"])), "",
-              "## 4. Figures", "",
+              "Error types:", ""]
+    lines += ["- `{}` - {}".format(k, v) for k, v in ERROR_CATALOG.items()]
+    if LEDGER_CSV.exists():
+        led = pd.read_csv(LEDGER_CSV)
+        cols = ["version", "split", "alerts_per_year", "alerts_labelled", "precision_strict",
+                "precision_at_10"] + [c for c in led.columns if c.startswith("recall_")]
+        lines += ["", "## 4. Measurement ledger", "",
+                  "One row per method version and split (`experiments/ledger.csv`). "
+                  "Blank precision means the alerts are not labelled yet.", "",
+                  md_table(led[[c for c in cols if c in led.columns]].fillna(""))]
+    lines += ["", "## 5. Figures", "",
               "- `figures/fig1_portfolio_level_trend.png` - why a level chart fails on this data",
               "- `figures/fig2_cameroon_level_vs_growth.png` - level vs growth, volatile borrower",
               "- `figures/fig2_bangladesh_level_vs_growth.png` - level vs growth, large steady borrower",

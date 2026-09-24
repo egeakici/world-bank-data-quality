@@ -12,7 +12,7 @@ The question running through every project here is the same one a financial data
 
 | Project | What it does | Status |
 |---|---|---|
-| [ida-disbursement-spc](ida-disbursement-spc) | Statistical Process Control on IDA country-level gross disbursements. Robust (median/MAD) control charts with a separated baseline and monitoring window, a fixed-rule layer underneath, and recall measured by synthetic error injection. | complete |
+| [ida-disbursement-spc](ida-disbursement-spc) | Statistical Process Control on IDA country-level gross disbursements. Robust (median/MAD) control charts with a separated baseline and monitoring window, a fixed-rule layer underneath, and a measurement harness: recall on five planted error types, precision from human labels, and a ledger of every method version. | complete |
 
 Each project is self-contained: its own README, its own `outputs/`, runnable in four commands.
 
@@ -53,7 +53,7 @@ world-bank-data-quality/
 pip install -r ida-disbursement-spc/requirements.txt
 cd ida-disbursement-spc
 python src/step1_prepare.py && python src/step2_spc.py
-python src/step3_evaluate.py && python src/step4_report.py
+python src/review_alerts.py && python src/step3_evaluate.py && python src/step4_report.py
 ```
 
 Python 3.11+, and nothing beyond pandas, numpy and matplotlib. That constraint is intentional: a detector that a team has to keep alive after its author leaves is worth more than a more accurate one they cannot maintain.

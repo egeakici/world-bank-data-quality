@@ -31,14 +31,34 @@ Baseline FY2010-FY2019, monitored FY2020-FY2026, FY2027 excluded as an incomplet
 - **high** (z=-6.4) Cameroon FY2021: year-over-year change of -46% is below the expected range -27% to +27% (learned from FY2010-2019, where a typical year was -4%); that is 6.4 robust sigmas past the -27% limit.
 - **high** (z=-6.1) Central Asia FY2024: year-over-year change of -97% is below the expected range -82% to +432% (learned from FY2010-2019, where a typical year was -1%); that is 6.1 robust sigmas past the -82% limit.
 
-## 3. Evaluation (synthetic injection)
+## 3. Evaluation (synthetic injection, latest run)
 
-| error_type | trials | injected_per_trial | detected_per_trial | recall_pct_mean | recall_pct_min | recall_pct_max | alerts_on_clean_data | collateral_per_trial |
-|---|---|---|---|---|---|---|---|---|
-| spike | 10 | 27.4 | 20.3 | 74.4 | 57.7 | 91.3 | 62 | 15.6 |
-| drop | 10 | 27.8 | 24.3 | 87.5 | 81.5 | 95.7 | 62 | 18.8 |
+| error_type | trials | injected_per_trial | detected_per_trial | recall_pct_mean | recall_pct_min | recall_pct_max | collateral_per_trial |
+|---|---|---|---|---|---|---|---|
+| spike_x10 | 10 | 27.4 | 20.3 | 74.4 | 57.7 | 91.3 | 15.6 |
+| units_x1000 | 10 | 27.7 | 27.2 | 98.2 | 93.3 | 100.0 | 20.9 |
+| drop_to_zero | 10 | 29.2 | 24.7 | 84.5 | 76.7 | 93.5 | 18.8 |
+| misstate_25pct | 10 | 28.3 | 2.8 | 9.9 | 0.0 | 23.1 | 1.2 |
+| stale_repeat | 10 | 28.9 | 0.0 | 0.0 | 0.0 | 0.0 | 1.7 |
 
-## 4. Figures
+Error types:
+
+- `spike_x10` - an extra zero typed - value x10
+- `units_x1000` - thousands loaded as dollars - value x1000
+- `drop_to_zero` - the feed delivered nothing - value set to 0
+- `misstate_25pct` - a plausible misstatement - value x0.75 or x1.25
+- `stale_repeat` - last year's figure re-delivered - value = prior year
+
+## 4. Measurement ledger
+
+One row per method version and split (`experiments/ledger.csv`). Blank precision means the alerts are not labelled yet.
+
+| version | split | alerts_per_year | alerts_labelled | precision_strict | precision_at_10 | recall_spike_x10 | recall_units_x1000 | recall_drop_to_zero | recall_misstate_25pct | recall_stale_repeat |
+|---|---|---|---|---|---|---|---|---|---|---|
+| v1-frozen-baseline | holdout | 8.9 | 0 |  |  | 79.1 | 97.2 | 87.2 | 11.9 | 0.0 |
+| v1-frozen-baseline | tuning | 8.9 | 0 |  |  | 74.4 | 98.2 | 84.5 | 9.9 | 0.0 |
+
+## 5. Figures
 
 - `figures/fig1_portfolio_level_trend.png` - why a level chart fails on this data
 - `figures/fig2_cameroon_level_vs_growth.png` - level vs growth, volatile borrower
