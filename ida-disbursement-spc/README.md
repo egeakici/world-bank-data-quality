@@ -2,7 +2,7 @@
 
 A deliberately small project: **one financier (IDA), one measure (gross disbursement), one method (Statistical Process Control)**, on the 374 KB country × fiscal-year extract. The 460 MB credit-level snapshot file is *not* used here — the point is to understand the method on data you can hold in your head first.
 
-**Data:** `data/ibrd_and_ida_net_flows_commitments_09-16-2026.csv` at the repository root — 3,445 rows, 174 countries, FY2010–FY2027, extracted 2026-09-16.
+**Data:** `data/ibrd_and_ida_net_flows_commitments_09-16-2026.csv` at the repository root — 3,445 rows, 174 countries, FY2010–FY2027, extracted 2026-09-16. Source: World Bank Finances One, [IBRD and IDA Net Flows & Commitments (DS00044)](https://financesone.worldbank.org/ibrd-and-ida-net-flows-commitments/DS00044).
 
 ---
 

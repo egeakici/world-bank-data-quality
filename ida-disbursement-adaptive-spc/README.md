@@ -4,7 +4,7 @@ Project 01 ([ida-disbursement-spc](../ida-disbursement-spc)) learned its control
 
 Short answer, in advance: rolling limits catch more and monitor more countries, at the price of more collateral alerts and some brand-new blind spots. Several of those blind spots were only visible because this project built a chronological engine and a feed-failure test first. The details are below, with numbers.
 
-**Data:** the same 374 KB country × fiscal-year extract as Project 01 (`data/` at the repository root). IDA only, gross disbursement only.
+**Data:** the same 374 KB country × fiscal-year extract as Project 01 — World Bank Finances One, [IBRD and IDA Net Flows & Commitments (DS00044)](https://financesone.worldbank.org/ibrd-and-ida-net-flows-commitments/DS00044), extracted 2026-09-16, saved in `data/` at the repository root. IDA only, gross disbursement only.
 
 ---
 
