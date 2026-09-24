@@ -20,7 +20,7 @@ Each project is self-contained: its own README, its own `outputs/`, runnable in 
 
 ## Data
 
-Raw data is **not committed**. It is reproducible from [finances.worldbank.org](https://finances.worldbank.org), and one of the files is 460 MB — past GitHub's 100 MB limit, and not something a repository should carry when the source is a public API.
+Raw data is **not committed**. It is reproducible from [finances.worldbank.org](https://financesone.worldbank.org/data), and one of the files is 460 MB — past GitHub's 100 MB limit, and not something a repository should carry when the source is a public API.
 
 Download into `data/` at the repository root:
 
