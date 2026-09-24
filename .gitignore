@@ -1,0 +1,22 @@
+# Raw data is an INPUT to this repo, not part of it.
+# It is reproducible from the World Bank Finances API (see README), and one of
+# the files is 460 MB - well past GitHub's 100 MB hard limit.
+/data/
+
+# Generated silver layer. Rebuilt by step1_prepare.py in seconds.
+/*/data/
+
+# Note: */outputs/ IS committed on purpose - the figures are referenced
+# from the project READMEs, and the alert queue is the demonstrable result.
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

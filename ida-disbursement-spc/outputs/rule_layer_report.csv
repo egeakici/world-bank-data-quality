@@ -1,0 +1,6 @@
+rule,n_rows_flagged,pct_of_rows,note
+R1_net_identity,0,0.0,Net != Gross - Repayments by more than $1 (rounding tolerance)
+R2_negative_gross,42,1.219,"Gross disbursement below zero - usually a refund/correction, verify"
+R3_negative_repayments,0,0.0,Repayments below zero
+R4_duplicate_key,0,0.0,"More than one row per (financier, fiscal_year, country)"
+R5_region_reassigned,318,9.231,Country appears under more than one region across years

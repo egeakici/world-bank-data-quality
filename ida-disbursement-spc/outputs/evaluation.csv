@@ -1,0 +1,3 @@
+error_type,trials,injected_per_trial,detected_per_trial,recall_pct_mean,recall_pct_min,recall_pct_max,alerts_on_clean_data,collateral_per_trial,example_misses
+spike,10,27.4,20.3,74.4,57.7,91.3,62,15.6,Afghanistan FY2026; Armenia FY2022; Bosnia and Herzegovina FY2021; Cambodia FY2021; Dominica FY2023
+drop,10,27.8,24.3,87.5,81.5,95.7,62,18.8,Albania FY2021; Central Africa FY2021; Georgia FY2020; Albania FY2020; Guinea FY2026
