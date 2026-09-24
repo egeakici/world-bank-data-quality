@@ -1,0 +1,73 @@
+country,first_fy,last_fy,n_years,has_prior_activity,reactivated_fy,ongoing,other_flows_zero
+Afghanistan,2023,2023,1,True,2024.0,False,False
+Albania,2022,2026,5,True,,True,False
+Angola,2023,2026,4,True,,True,False
+Armenia,2025,2026,2,True,,True,False
+Azerbaijan,2019,2026,8,True,,True,False
+Belize,2025,2025,1,False,2026.0,False,False
+Bosnia and Herzegovina,2022,2026,5,True,,True,False
+Botswana,2010,2024,15,False,,True,False
+Caribbean,2012,2012,1,True,2013.0,False,False
+Caribbean,2014,2014,1,True,2015.0,False,False
+Central Africa,2011,2011,1,True,2012.0,False,True
+Central Africa,2018,2018,1,True,2019.0,False,False
+Central Africa,2026,2026,1,True,,True,False
+Central Asia,2024,2024,1,True,,False,True
+Central Asia,2026,2026,1,True,,True,False
+Chile,2010,2011,2,False,,True,False
+China,2010,2026,17,False,,True,False
+Colombia,2010,2011,2,False,,True,False
+Costa Rica,2010,2011,2,False,,True,False
+Dominican Republic,2010,2023,14,False,,True,False
+Eastern Africa,2016,2016,1,False,2017.0,False,False
+Ecuador,2010,2023,14,False,,True,False
+"Egypt, Arab Republic of",2014,2026,13,True,,True,False
+El Salvador,2010,2026,17,False,,True,False
+Equatorial Guinea,2010,2026,17,False,,True,False
+Eswatini,2010,2025,16,False,2026.0,False,False
+Georgia,2025,2026,2,True,,True,False
+Indonesia,2014,2026,13,True,,True,False
+Iraq,2017,2026,10,True,,True,False
+Jordan,2010,2016,7,False,2017.0,False,False
+Jordan,2023,2023,1,True,2024.0,False,False
+Jordan,2025,2026,2,True,,True,False
+Kiribati,2011,2011,1,False,2012.0,False,False
+"Korea, Republic of",2010,2010,1,False,,True,False
+Lebanon,2017,2017,1,False,2018.0,False,False
+Lebanon,2019,2019,1,True,2020.0,False,True
+Lebanon,2022,2023,2,True,2024.0,False,False
+Lebanon,2025,2026,2,True,,True,False
+MIGA,2019,2026,8,False,,True,False
+Marshall Islands,2015,2015,1,True,2016.0,False,False
+Mauritius,2010,2024,15,False,,False,False
+Mauritius,2026,2026,1,False,,True,True
+Mekong,2012,2012,1,False,2013.0,False,False
+"Micronesia, Federated States of",2014,2014,1,False,2015.0,False,False
+Middle East and North Africa,2022,2022,1,False,2023.0,False,False
+Montenegro,2015,2026,12,True,,True,False
+Morocco,2010,2025,16,False,,True,False
+Myanmar,2023,2025,3,True,2026.0,False,False
+Nicaragua,2026,2026,1,True,,True,False
+North Macedonia,2010,2026,17,False,,True,False
+OECS Countries,2022,2022,1,False,2023.0,False,False
+Paraguay,2010,2026,17,False,,True,False
+Philippines,2010,2026,17,False,,True,False
+Serbia,2015,2026,12,True,,True,False
+South Asia,2020,2020,1,False,2021.0,False,False
+South East Asia,2022,2022,1,False,2023.0,False,False
+South Sudan,2013,2013,1,False,2014.0,False,False
+St. Kitts and Nevis,2010,2026,17,False,,True,False
+Sudan,2011,2011,1,False,,False,True
+Sudan,2023,2024,2,True,2025.0,False,False
+Suriname,2025,2025,1,False,,True,False
+Syrian Arab Republic,2010,2012,3,False,,False,False
+Syrian Arab Republic,2025,2025,1,False,2026.0,False,False
+"Taiwan, China",2010,2012,3,False,,True,False
+Thailand,2010,2012,3,False,,True,False
+Tunisia,2010,2023,14,False,,True,False
+Turkiye,2010,2023,14,False,,True,False
+Vanuatu,2010,2015,6,False,2016.0,False,False
+Western Africa,2014,2016,3,True,2017.0,False,False
+Zimbabwe,2014,2017,4,False,,False,False
+Zimbabwe,2019,2019,1,False,2020.0,False,False
+Zimbabwe,2024,2026,3,True,,True,False

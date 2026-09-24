@@ -12,9 +12,10 @@ The question running through every project here is the same one a financial data
 
 | Project | What it does | Status |
 |---|---|---|
-| [ida-disbursement-spc](ida-disbursement-spc) | Statistical Process Control on IDA country-level gross disbursements. Robust (median/MAD) control charts with a separated baseline and monitoring window, a fixed-rule layer underneath, and a measurement harness: recall on five planted error types, precision from human labels, and a ledger of every method version. | complete |
+| [ida-disbursement-spc](ida-disbursement-spc) | Statistical Process Control on IDA country-level gross disbursements. Robust (median/MAD) control charts with a separated baseline and monitoring window, a fixed-rule layer underneath, and a measurement harness: recall on five planted error types, precision from human labels, and a ledger of every method version. | complete (v1.1) |
+| [ida-disbursement-adaptive-spc](ida-disbursement-adaptive-spc) | Project 02. Rolling, leakage-free control limits compared against the fixed baseline on identical synthetic errors. Adds gap-aware growth, a chronological sustained-shift rule, minimal zero-period (lifecycle) handling, a recalibration policy for flagged points, a `feed_stops` error type and regression tests. Reuses Project 01's code rather than copying it. | complete |
 
-Each project is self-contained: its own README, its own `outputs/`, runnable in four commands.
+Each project has its own README, its own `outputs/`, and its own run commands. Project 02 imports Project 01's building blocks (statistics, rules, injectors) through a single bridge module and never writes into Project 01's folders, so Project 01 stays the reproducible v1.1 reference.
 
 ---
 
@@ -40,10 +41,17 @@ Two grains, deliberately. The summary file is small enough to reason about by ha
 ```
 world-bank-data-quality/
 ├── data/                        # git-ignored; shared download target
-├── ida-disbursement-spc/        # one folder per project, at the root
+├── ida-disbursement-spc/        # Project 01 - fixed-baseline robust SPC (v1.1 reference)
 │   ├── README.md                # the method, the findings, the limitations
 │   ├── src/                     # config, spc_core, four numbered steps
+│   ├── labels/, experiments/    # human labels, results ledger
 │   └── outputs/                 # alerts, figures, FINDINGS.md (committed)
+├── ida-disbursement-adaptive-spc/  # Project 02 - rolling limits vs fixed
+│   ├── README.md
+│   ├── src/                     # v1_bridge, adaptive_config/core, a1..a4 steps
+│   ├── tests/                   # unittest regression tests
+│   ├── experiments/             # ledger: one row per method x split
+│   └── outputs/                 # points, alerts, incidents, COMPARISON.md, figures
 └── README.md
 ```
 
@@ -56,13 +64,23 @@ python src/step1_prepare.py && python src/step2_spc.py
 python src/review_alerts.py && python src/step3_evaluate.py && python src/step4_report.py
 ```
 
+Project 02 (PowerShell; exact commands and options in its README):
+
+```powershell
+cd ida-disbursement-adaptive-spc
+python src/a1_prepare.py; python src/a2_adaptive_spc.py
+python src/a3_evaluate.py; python src/a3_evaluate.py --split holdout
+python src/a4_report.py
+python -m unittest discover -s tests -v
+```
+
 Python 3.11+, and nothing beyond pandas, numpy and matplotlib. That constraint is intentional: a detector that a team has to keep alive after its author leaves is worth more than a more accurate one they cannot maintain.
 
 ---
 
 ## Where this goes
 
-1. **Rolling control limits** — a frozen baseline eventually describes a process that no longer exists, and every legitimate regime change then alerts forever.
+1. ~~**Rolling control limits**~~ — done in Project 02, with the trade-offs it exposed documented there.
 2. **Scale to the credit-level snapshots** — same maths, finer grain. Two free rules arrive with it: cumulative disbursement should never *decrease*, and a credit that vanishes between snapshots is a missing-data pattern rather than an amount anomaly.
 3. **Reconcile the two datasets** against each other.
 4. **A second, multivariate detector** (Isolation Forest) for what a one-variable-at-a-time chart structurally cannot see — keeping SPC as the explainable first layer rather than replacing it.

@@ -1,0 +1,5 @@
+method,alerts,alerts_high,shift_alerts,recurring_countries,incidents,persistent_incidents,lifecycle_incidents,countries_monitored,observations_monitored,countries_excluded,dormant_observations,excluded_reasons
+v1.1-reference,62,11,7,7,39,4,0,82,560,59,0,only 0 baseline years (<8) 20; zero baseline variation (MAD = 0) 19; only 5 baseline years (<8) 3; only 2 baseline years (<8) 2; only 6 baseline years (<8) 2; only 7 baseline years (<8) 2; only 3 baseline years (<8) 1; only 4 baseline years (<8) 1
+v2-fixed,53,11,0,6,36,3,17,74,495,67,157,insufficient_history 28; dormant 22; no_prior_year 8
+v2-rolling,61,16,0,7,42,4,17,84,533,57,157,dormant 22; insufficient_history 18; no_prior_year 8
+v2-rolling-naive,54,11,0,2,44,0,0,92,586,49,0,zero_mad 17; insufficient_history 15; no_prior_year 8
