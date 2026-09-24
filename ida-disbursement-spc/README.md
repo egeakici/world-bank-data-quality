@@ -72,12 +72,15 @@ The World Bank fiscal year runs 1 July – 30 June and is named for the year it 
 | R3 negative repayments | 0 | — |
 | R4 duplicate primary key | 0 | no fan-out from an upstream join |
 | R5 country changed region | 318 | **a real structural change** |
+| R6 gross identical to prior year | 1 | IBRD Chile FY2020, a round $10,000,000 — plausibly genuine |
 
 R5 is the interesting one. In FY2026 the Bank reorganised its regions: Afghanistan and Pakistan left `SOUTH ASIA`, eleven MENA countries left `MIDDLE EAST AND NORTH AFRICA`, and all thirteen now sit in `MID EAST,NORTH AFRICA,AFG,PAK`. Nothing about the money changed. But **every regional total before FY2026 is on a different basis than every regional total after**, and an unsuspecting year-over-year regional comparison would show a South Asia "collapse" that is pure taxonomy.
 
 This is reference-data drift, and note what found it: not the model. A five-line rule. Which is exactly why SPC sits *on top of* the rule layer and never replaces it — rules catch what you already know can break, cheaply and explainably.
 
 R2 is the counterpart lesson: 42 rows violate "amounts are non-negative" and all 42 are probably fine. **"Violates a simple rule" is not the same as "incorrect."** The rule reports; a human decides.
+
+R6 was added *because the measurement harness found a blind spot* (see below): a stale feed that re-delivers last year's figure produces 0% growth, which the chart can never flag. The rule is deliberately **gross-only**. Gross disbursement follows project invoices and repeats to the cent once in 3,445 rows; repayments follow fixed instalment schedules and repeat exactly **136 times**, legitimately. The same rule on the wrong field would be an alert generator — a rule is only as valid as the behaviour of the field it is applied to. → [step1_prepare.py:49](src/step1_prepare.py#L49)
 
 ### 3. The textbook chart fails here — and the failure is the lesson
 
@@ -115,13 +118,30 @@ Bangladesh is the cleanest illustration. The level chart (left) has limits of $0
 
 And every alert carries a sentence, generated from the chart itself:
 
-> **Bangladesh FY2020:** year-over-year change of −29% is below the expected range −19% to +66% (learned from FY2010-2019, where a typical year was +16%); that is 4.1 robust sigmas past the −19% limit.
+> **Bangladesh FY2020:** year-over-year change of −29% is below the expected range −19% to +66% (learned from FY2010-2019, where a typical year was +16%); that is 4.1 robust sigmas from the typical year (limits sit at 3), so 1.1 beyond the −19% limit.
+
+An earlier version said "4.1 robust sigmas *past the limit*". The z-score is measured from the centre line, not from the limit, so that wording overstated every alert by 3σ. The flags were right; the sentence was wrong — and in a system whose whole selling point is the sentence, that is a real defect.
 
 That sentence is the whole argument for choosing SPC over an autoencoder as a *first* system. "The model said so" does not survive contact with a financial controller. → [spc_core.py:116](src/spc_core.py#L116)
 
 Two rules fire, not one:
 - **beyond_limits** (55 alerts) — a spike.
 - **sustained_shift** (7 alerts) — 8+ consecutive years on one side of the centre line without ever breaking a limit. A process can move by one sigma and never trip a 3-sigma test; every point looks fine and the *level* has changed. This is the difference between "a bad month" and "this country's disbursement profile is now different."
+
+### 5. Alerts are not incidents
+
+One disruption rarely produces one alert on a year-over-year chart. A single bad year flags twice — the jump, then the jump back. A country whose level moved for good flags every year after. So alerts in consecutive years of one country are grouped into one **incident**, the unit an analyst actually opens (`outputs/spc_incidents.csv`):
+
+| incident kind | pattern | count | what to do |
+|---|---|---|---|
+| `single` | one flagged year | 25 | investigate that year |
+| `spike_and_reversal` | 2 years, opposite directions | 7 | check the **first** year's level — the second is the return to normal |
+| `two_year_move` | 2 years, same direction | 3 | a two-step change |
+| `persistent` | 3+ years in a row | 4 | the baseline no longer describes this country — re-fit, don't investigate n times |
+
+**62 alerts → 39 incidents, 9 → 6 a year.** Detection is untouched: every alert is still in `spc_alerts.csv`, with an `incident_id` pointing at its incident. Only the unit of work changed. → [spc_core.py:141](src/spc_core.py#L141)
+
+The grouping immediately explained the worst repeat offender. Azerbaijan's 7 alerts are one `persistent` incident reading *+0%, +0%, +0%…*: **IDA stopped disbursing to Azerbaijan after FY2018** (repayments continue). Growth from $0 to $0 is 0%, just under its baseline centre of +7.6%, so the 8-in-a-row rule fires every year. That is a lifecycle event, not a data problem — and a series that has gone permanently to zero needs its own handling, which belongs with rolling limits.
 
 ---
 
@@ -145,9 +165,11 @@ We make our own labels by breaking data we believe is clean, one error per count
 | `drop_to_zero` | the feed delivered nothing | 84.5% | 87.2% |
 | `spike_x10` | an extra zero typed | 74.4% | 79.1% |
 | `misstate_25pct` | value ×0.75 or ×1.25 | 9.9% | 11.9% |
-| `stale_repeat` | last year's figure re-delivered | **0.0%** | **0.0%** |
+| `stale_repeat` | last year's figure re-delivered | **0.0%** → 100% with R6 | **0.0%** → 100% with R6 |
 
-The bottom two rows are the point of having a catalogue. A 25% misstatement sits inside the ordinary year-to-year variation of most countries, so a 3σ chart structurally cannot see it. A stale repeat produces a growth of exactly 0% — which is *closer* to normal than most real years, so the chart will never flag it. That is not a tuning problem; it is a blind spot, and its fix belongs in the rule layer (`value == last year's value`), not in the chart. A catalogue with only the easy errors would have hidden both.
+The bottom two rows are the point of having a catalogue. A 25% misstatement sits inside the ordinary year-to-year variation of most countries, so a 3σ chart structurally cannot see it. A stale repeat produces a growth of exactly 0% — which is *closer* to normal than most real years, so the chart will never flag it. That is not a tuning problem; it is a blind spot, and its fix belongs in the rule layer (`value == last year's value`), not in the chart — which is what R6 now does. A catalogue with only the easy errors would have hidden both.
+
+Recall is measured on the **system** (growth chart + R6), not the chart alone: an analyst does not care which layer caught the stale feed, only that something did. The other four rows did not move by a decimal between v1 and v1.1, which is the check that the fixes changed only what they were meant to change.
 
 **Tuning vs hold-out.** The injections are drawn from two seeds. Anything that gets tuned — the sigma multiplier, the windows — is tuned against the *tuning* draws only. The *hold-out* draws are run once per finished version and those are the numbers reported. Tune and score on the same draws and you measure how well you fitted your own test. The gap between the two columns above (74% vs 79% on the same method) is pure sampling noise, which is also a useful calibration: differences smaller than that between two versions are not evidence of anything.
 
@@ -193,7 +215,7 @@ Being explicit about this is part of the deliverable, not a disclaimer.
 
 - **59 of the 141 country series are never charted.** 22 have no baseline at all (the country entered IDA after FY2019), 19 have a baseline of all-identical values so MAD = 0, the rest are too short. `fit_chart` **refuses to fit** rather than produce confident nonsense from three points. "Not enough evidence" is a legitimate output and it is what keeps the queue credible. → [spc_not_charted.csv](outputs/spc_not_charted.csv)
 - **Robust limits can be too tight.** Chad's baseline was unusually quiet, giving limits of −6% to +38%; four of its seven monitored years flag. MAD protects against outliers inflating limits, but a placid baseline produces limits too narrow for a genuinely volatile borrower.
-- **Repeat offenders are miscounted.** Azerbaijan flags in all 7 monitored years. That is not 7 incidents — it is one regime change that the FY2010–2019 baseline no longer describes. A production system needs limit re-fitting and alert de-duplication per entity.
+- **Persistent incidents are grouped, not solved.** Azerbaijan, Kosovo, Cameroon and DR Congo are now one incident each instead of 3–7 alerts, but they will keep firing every year until the limits are re-fitted on a window that includes the new behaviour. Grouping fixes the count; rolling limits fix the cause.
 - **One variable at a time.** SPC cannot see "this amount is normal, and this credit age is normal, but this amount *for a credit of this age* is not". That is the gap Isolation Forest fills, and the reason to reach for it second, not first.
 - **Baseline points can sit outside their own limits** (see Cameroon FY2013 in the figure). A strict Phase I procedure excludes such points and refits. Not done here — worth knowing that the textbook has a further step.
 
@@ -221,7 +243,8 @@ labels/alert_labels.csv       human labels for the alert queue (committed, hand-
 experiments/ledger.csv        one row per method version x split (committed)
 
 outputs/FINDINGS.md     generated summary
-outputs/spc_alerts.csv  the alert queue, ranked by |robust z|
+outputs/spc_alerts.csv  the alert queue, ranked by |robust z|, each with its incident_id
+outputs/spc_incidents.csv     alerts grouped into incidents - the analyst's unit of work
 outputs/spc_points.csv  every monitored point with its limits (audit trail)
 outputs/spc_not_charted.csv   what was skipped, and why
 outputs/evaluation.csv  recall per error type, latest run

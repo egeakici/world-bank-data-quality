@@ -14,7 +14,7 @@ observation per country per fiscal year. There is no subgroup to average.
 import numpy as np
 import pandas as pd
 
-from config import MAD_TO_SIGMA, SIGMA_MULTIPLIER, RUN_LENGTH_RULE
+from config import MAD_TO_SIGMA, SIGMA_MULTIPLIER, RUN_LENGTH_RULE, INCIDENT_PERSISTENT_RUN
 
 
 def robust_center_and_sigma(values):
@@ -128,13 +128,86 @@ def explain(entity, fy, value, chart, z, rule, kind="usd"):
         return (f"{entity} FY{fy}: {noun} of {f(value)} is {direction} the expected range "
                 f"{f(chart['lcl'])} to {f(chart['ucl'])} "
                 f"(learned from FY{chart['baseline_span']}, where a typical year was {f(chart['center'])}); "
-                f"that is {abs(z):.1f} robust sigmas past the {f(bound)} limit.")
+                f"that is {abs(z):.1f} robust sigmas from the typical year (limits sit at "
+                f"{SIGMA_MULTIPLIER:.0f}), so {abs(z) - SIGMA_MULTIPLIER:.1f} beyond the {f(bound)} limit.")
     if rule == "sustained_shift":
         side = "above" if value > chart["center"] else "below"
         return (f"{entity} FY{fy}: no single year breaks a control limit, but this is part of a run of "
                 f"{RUN_LENGTH_RULE}+ consecutive years {side} the historical typical {noun} of "
                 f"{f(chart['center'])} - the level has shifted rather than spiked.")
     return f"{entity} FY{fy}: flagged by {rule}."
+
+
+def group_incidents(alerts, baseline_span):
+    """Collapse growth-chart alerts into incidents - what an analyst opens.
+
+    One disruption rarely produces one alert on a year-over-year chart:
+      * a single bad year t flags at t (the jump) AND at t+1 (the jump back);
+      * a country whose level moved for good flags every year after the move.
+    Counting those as 2 or 7 separate problems inflates the queue with
+    duplicates, which is alert fatigue by another route. So alerts in
+    consecutive fiscal years of one country become one incident:
+
+      single              one flagged year, nothing either side
+      spike_and_reversal  2 years, opposite directions -> one unusual year (t);
+                          t+1 is the return to normal
+      two_year_move       2 years, same direction -> a two-step change
+      persistent          INCIDENT_PERSISTENT_RUN+ years in a row -> the
+                          baseline no longer describes this country; the fix
+                          is re-fitting the limits, not n investigations
+
+    Detection is untouched - every alert is still in spc_alerts.csv with an
+    incident_id pointing here. Only the unit of work changes.
+    """
+    pct = lambda v: f"{(np.exp(v) - 1) * 100:+.0f}%"
+    a = alerts.sort_values(["country", "fiscal_year"]).copy()
+    a["incident_id"] = ""
+    incidents = []
+    for country, g in a.groupby("country"):
+        years = g.fiscal_year.tolist()
+        runs, cur = [], [years[0]]
+        for y in years[1:]:
+            if y == cur[-1] + 1:
+                cur.append(y)
+            else:
+                runs.append(cur)
+                cur = [y]
+        runs.append(cur)
+
+        for run in runs:
+            part = g[g.fiscal_year.isin(run)]
+            z, v = part.robust_z.to_numpy(), part.value.to_numpy()
+            first, last = run[0], run[-1]
+            iid = f"{country} FY{first}" + (f"-{last}" if last != first else "")
+            if len(run) >= INCIDENT_PERSISTENT_RUN:
+                kind = "persistent"
+                summary = (f"{country}: flagged in {len(run)} consecutive years FY{first}-FY{last} "
+                           f"({', '.join(pct(x) for x in v)}). The FY{baseline_span} baseline no longer "
+                           f"describes this country - treat as one regime change and re-fit its limits, "
+                           f"not as {len(run)} separate investigations.")
+            elif len(run) == 2 and np.sign(z[0]) != np.sign(z[1]):
+                kind = "spike_and_reversal"
+                summary = (f"{country}: FY{first} moved {pct(v[0])} and FY{last} moved {pct(v[1])} straight "
+                           f"back - most likely ONE unusual year (FY{first}); check that year's level first.")
+            elif len(run) == 2:
+                kind = "two_year_move"
+                summary = (f"{country}: two unusual years in the same direction, FY{first} {pct(v[0])} "
+                           f"and FY{last} {pct(v[1])} - a two-step change rather than a one-off.")
+            else:
+                kind = "single"
+                summary = part.explanation.iloc[0]
+            a.loc[part.index, "incident_id"] = iid
+            incidents.append({
+                "incident_id": iid, "country": country, "first_fy": first, "last_fy": last,
+                "n_alerts": len(run), "kind": kind,
+                "max_abs_z": round(float(np.abs(z).max()), 1),
+                "severity": "high" if (part.severity == "high").any() else "medium",
+                "summary": summary,
+            })
+    inc = pd.DataFrame(incidents)
+    if len(inc):
+        inc = inc.sort_values("max_abs_z", ascending=False).reset_index(drop=True)
+    return a, inc
 
 
 def tidy_chart_frame(rows):

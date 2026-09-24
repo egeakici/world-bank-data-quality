@@ -38,7 +38,9 @@ from config import (OUT_DIR, MEASURE, MONITOR_START_FY, MONITOR_END_FY, BASELINE
                     SYNTHETIC_PER_TRIAL, SYNTHETIC_TRIALS, ERROR_CATALOG, MISSTATEMENT,
                     TUNING_SEED, HOLDOUT_SEED, METHOD_VERSION, LEDGER_CSV, HIGH_SEVERITY_Z,
                     PRECISION_AT_N, EXTRACT_DATE)
+from step1_prepare import stale_repeat_mask
 from step2_spc import load_series, add_growth, build
+from spc_core import group_incidents
 from review_alerts import load_labels
 
 N_MON_YEARS = MONITOR_END_FY - MONITOR_START_FY + 1
@@ -87,10 +89,23 @@ def inject(df, rng, kind, n):
 
 
 def alerts_for(df):
+    """Everything the SYSTEM would flag on this data: growth-chart alerts plus
+    the monitoring rules that can fire on a single measure (R6 stale repeat).
+
+    Recall is measured on the system, not the chart. An analyst does not care
+    which layer caught the stale feed - only that something did. Measuring the
+    chart alone would score the stale-repeat error at 0% forever and hide the
+    fact that the rule layer now covers it.
+    """
     pts, _ = build(add_growth(df), "yoy_log_growth", "B_growth",
                    floor_at_zero=False, kind="growth")
     hit = pts[pts.rule != ""]
-    return pts, set(zip(hit.country, hit.fiscal_year)), hit
+    found = set(zip(hit.country, hit.fiscal_year))
+
+    stale = stale_repeat_mask(df, MEASURE, ["country"])
+    stale &= df.fiscal_year.between(MONITOR_START_FY, MONITOR_END_FY)
+    found |= set(zip(df.country[stale], df.fiscal_year[stale]))
+    return pts, found, hit
 
 
 def measure_recall(clean, clean_alerts, seed):
@@ -187,6 +202,7 @@ def main():
     clean = load_series().reset_index(drop=True)
     _, clean_alerts, clean_hits = alerts_for(clean)
     n_high = int((clean_hits.robust_z.abs() >= HIGH_SEVERITY_Z).sum())
+    _, incidents = group_incidents(clean_hits, f"{BASELINE_START_FY}-{BASELINE_END_FY}")
 
     recall = measure_recall(clean, clean_alerts, seed)
     precision = measure_precision(clean_hits)
@@ -204,6 +220,8 @@ def main():
         "alerts": len(clean_alerts),
         "alerts_per_year": round(len(clean_alerts) / N_MON_YEARS, 1),
         "alerts_high": n_high,
+        "incidents": len(incidents),
+        "incidents_per_year": round(len(incidents) / N_MON_YEARS, 1),
         **precision,
         **{f"recall_{r.error_type}": r.recall_pct_mean for r in recall.itertuples()},
         "note": args.note,
@@ -211,7 +229,7 @@ def main():
     ledger = upsert_ledger(row)
 
     print(f"MEASUREMENT - version {args.version}, {args.split} draws (seed {seed})\n")
-    print("RECALL (planted errors, chart B)")
+    print("RECALL (planted errors, whole system: growth chart + rule R6)")
     print(recall.drop(columns=["example_misses"]).to_string(index=False))
     print("\nexample misses:")
     for r in recall.itertuples():
@@ -219,6 +237,8 @@ def main():
 
     print(f"\nALERT LOAD on untouched data: {len(clean_alerts)} alerts over {N_MON_YEARS} fiscal years "
           f"({len(clean_alerts) / N_MON_YEARS:.0f}/year), {n_high} high severity (|z| >= {HIGH_SEVERITY_Z}).")
+    print(f"  grouped into {len(incidents)} incidents ({len(incidents) / N_MON_YEARS:.0f}/year) - "
+          "the unit an analyst actually opens")
 
     print("\nPRECISION (human labels)")
     if precision["alerts_labelled"] == 0:

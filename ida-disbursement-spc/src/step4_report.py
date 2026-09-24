@@ -206,8 +206,17 @@ def main():
         "the chart is measuring growth.".format(n_a, n_a_pts, n_trend, n_mon_years),
         "- **Growth chart (B)** flags {} points, {} of them high severity - about {:.0f} alerts per "
         "fiscal year, which a team can actually work through.".format(n_b, n_b_high, n_b / n_mon_years),
-        "", "### Top 10 growth-chart alerts", "",
     ]
+    inc_path = OUT_DIR / "spc_incidents.csv"
+    if inc_path.exists():
+        inc = pd.read_csv(inc_path)
+        lines += ["- Those {} alerts group into **{} incidents** (about {:.0f} per year): {}."
+                  .format(n_b, len(inc), len(inc) / n_mon_years,
+                          ", ".join("{} {}".format(v, k) for k, v in inc.kind.value_counts().items())),
+                  "", "### Multi-year incidents", ""]
+        for _, r in inc[inc.kind != "single"].iterrows():
+            lines.append("- **{}** ({}) {}".format(r.kind, r.severity, r.summary))
+    lines += ["", "### Top 10 growth-chart alerts", ""]
     for _, r in alerts[alerts.chart == "B_growth"].head(10).iterrows():
         lines.append("- **{}** (z={:+.1f}) {}".format(r.severity, r.robust_z, r.explanation))
     lines += ["", "## 3. Evaluation (synthetic injection, latest run)", "",

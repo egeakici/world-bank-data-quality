@@ -46,6 +46,31 @@ def load_bronze():
     return df.rename(columns=RENAME)
 
 
+def stale_repeat_mask(df, value_col, group_cols):
+    """True where a positive value equals, to the cent, the same series' value
+    in the immediately preceding fiscal year.
+
+    Why this is a RULE and not a job for the control chart: a repeated figure
+    is 0% growth, which sits closer to the centre line than most real years.
+    The growth chart is structurally blind to it (0% recall in the measurement
+    harness). A one-line rule sees it perfectly.
+
+    Why gross disbursement only: disbursements follow project invoices, so an
+    exact repeat is almost unheard of - once in 3,445 rows here. Repayments
+    follow fixed instalment schedules and repeat exactly 136 times in the same
+    file, legitimately. The same rule on the wrong field is an alert generator.
+    A rule is only as valid as the behaviour of the field it is applied to.
+
+    Shared with step3_evaluate, which applies it to deliberately broken data.
+    """
+    d = df.sort_values(group_cols + ["fiscal_year"])
+    g = d.groupby(group_cols)
+    prev_value = g[value_col].shift(1)
+    prev_year = g["fiscal_year"].shift(1)
+    mask = (d[value_col] > 0) & (d[value_col] == prev_value) & (prev_year == d.fiscal_year - 1)
+    return mask.reindex(df.index)
+
+
 def run_rules(df):
     """Each rule returns (name, boolean mask of offending rows, note)."""
     checks = []
@@ -76,6 +101,11 @@ def run_rules(df):
     n_regions = df.groupby("country").region.transform("nunique")
     checks.append(("R5_region_reassigned", n_regions > 1,
                    "Country appears under more than one region across years"))
+
+    # R6 - stale feed. See stale_repeat_mask for why this is gross-only.
+    checks.append(("R6_stale_gross",
+                   stale_repeat_mask(df, "gross_disbursement_usd", ["financier", "country"]),
+                   "Gross disbursement identical to the cent to the prior fiscal year - stale feed?"))
 
     rows = []
     for name, mask, note in checks:

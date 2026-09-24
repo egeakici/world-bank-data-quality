@@ -51,6 +51,9 @@ RUN_LENGTH_RULE = 8           # 8 points on one side of the centre = shift
 # Alert fatigue is an operational failure mode, not a modelling detail.
 HIGH_SEVERITY_Z = 5.0
 TOP_N_ALERTS = 25
+# Alerts in this many consecutive years of one country are one "persistent"
+# incident (a regime change), not that many separate investigations.
+INCIDENT_PERSISTENT_RUN = 3
 
 # ---------------------------------------------------------------- evaluation
 # Injections must be SPARSE. An early version of this project corrupted 35% of
@@ -83,7 +86,7 @@ HOLDOUT_SEED = 2026
 # ---------------------------------------------------------------- measurement
 # The name of the method as it stands. Change it whenever the detector changes
 # (e.g. "v2-rolling-baseline") so the ledger keeps one row per version.
-METHOD_VERSION = "v1-frozen-baseline"
+METHOD_VERSION = "v1.1-quick-fixes"   # was v1-frozen-baseline
 
 # Human labels and the ledger live OUTSIDE outputs/ because outputs/ is
 # rebuilt on every run, and neither of these can be rebuilt: labels are an

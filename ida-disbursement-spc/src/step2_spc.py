@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import (SILVER_DIR, OUT_DIR, FINANCIER, MEASURE, BASELINE_START_FY,
                     BASELINE_END_FY, MONITOR_START_FY, MONITOR_END_FY,
                     MIN_BASELINE_POINTS, HIGH_SEVERITY_Z, TOP_N_ALERTS)
-from spc_core import fit_chart, robust_z, run_rule_flags, explain
+from spc_core import fit_chart, robust_z, run_rule_flags, explain, group_incidents
 
 
 def load_series():
@@ -117,11 +117,18 @@ def main():
     skip = pd.concat([a_skip, b_skip], ignore_index=True)
     alerts = pts[pts.rule != ""].copy()
     alerts["abs_z"] = alerts.robust_z.abs()
+
+    # Incidents are built from the growth chart only - chart A is kept as the
+    # teaching counter-example, not as something an analyst should work from.
+    b_alerts, incidents = group_incidents(alerts[alerts.chart == "B_growth"],
+                                          f"{BASELINE_START_FY}-{BASELINE_END_FY}")
+    alerts["incident_id"] = b_alerts.incident_id.reindex(alerts.index).fillna("")
     alerts = alerts.sort_values(["chart", "abs_z"], ascending=[True, False])
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     pts.to_csv(OUT_DIR / "spc_points.csv", index=False)
     alerts.to_csv(OUT_DIR / "spc_alerts.csv", index=False)
+    incidents.to_csv(OUT_DIR / "spc_incidents.csv", index=False)
     skip.to_csv(OUT_DIR / "spc_not_charted.csv", index=False)
 
     n_mon_years = MONITOR_END_FY - MONITOR_START_FY + 1
@@ -135,9 +142,13 @@ def main():
               f"alerts per country-year {len(a)/max(len(p),1):.2f}")
         print(f"{'':9s} not charted: {len(skip[skip.chart==name]):3d} "
               f"({skip[skip.chart==name].reason.str.split(' ').str[0].value_counts().to_dict()})")
+    n_b = int((alerts.chart == "B_growth").sum())
+    print(f"\nB_growth: {n_b} alerts -> {len(incidents)} incidents "
+          f"({len(incidents) / n_mon_years:.0f}/year)  {incidents.kind.value_counts().to_dict()}")
     print(f"\nTop {TOP_N_ALERTS} growth-chart alerts by |robust z|:\n")
     for _, r in alerts[alerts.chart == "B_growth"].head(TOP_N_ALERTS).iterrows():
         print(f"  [{r.severity:6s} z={r.robust_z:+6.1f}] {r.explanation[:150]}")
+    print(f"\nwrote {OUT_DIR / 'spc_alerts.csv'} + spc_incidents.csv, spc_points.csv, spc_not_charted.csv")
 
 
 if __name__ == "__main__":

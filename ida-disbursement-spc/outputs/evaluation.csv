@@ -3,4 +3,4 @@ spike_x10,10,27.4,20.3,74.4,57.7,91.3,15.6,Afghanistan FY2026; Armenia FY2022; B
 units_x1000,10,27.7,27.2,98.2,93.3,100.0,20.9,Central Africa FY2024; Central Africa FY2025; Sao Tome and Principe FY2023; Sao Tome and Principe FY2022; Georgia FY2024
 drop_to_zero,10,29.2,24.7,84.5,76.7,93.5,18.8,Cabo Verde FY2020; Sao Tome and Principe FY2024; Afghanistan FY2024; Caribbean FY2026; Kiribati FY2022
 misstate_25pct,10,28.3,2.8,9.9,0.0,23.1,1.2,Angola FY2020; Armenia FY2022; Benin FY2020; Burkina Faso FY2023; Cabo Verde FY2020
-stale_repeat,10,28.9,0.0,0.0,0.0,0.0,1.7,Afghanistan FY2020; Africa FY2021; Armenia FY2024; Bolivia FY2025; Burkina Faso FY2026
+stale_repeat,10,28.9,28.9,100.0,100.0,100.0,12.8,

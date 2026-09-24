@@ -4,3 +4,4 @@ R2_negative_gross,42,1.219,"Gross disbursement below zero - usually a refund/cor
 R3_negative_repayments,0,0.0,Repayments below zero
 R4_duplicate_key,0,0.0,"More than one row per (financier, fiscal_year, country)"
 R5_region_reassigned,318,9.231,Country appears under more than one region across years
+R6_stale_gross,1,0.029,Gross disbursement identical to the cent to the prior fiscal year - stale feed?
