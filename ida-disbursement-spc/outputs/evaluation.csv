@@ -1,6 +1,6 @@
 error_type,trials,injected_per_trial,detected_per_trial,recall_pct_mean,recall_pct_min,recall_pct_max,collateral_per_trial,example_misses
-spike_x10,10,27.4,20.3,74.4,57.7,91.3,15.6,Afghanistan FY2026; Armenia FY2022; Bosnia and Herzegovina FY2021; Cambodia FY2021; Dominica FY2023
-units_x1000,10,27.7,27.2,98.2,93.3,100.0,20.9,Central Africa FY2024; Central Africa FY2025; Sao Tome and Principe FY2023; Sao Tome and Principe FY2022; Georgia FY2024
-drop_to_zero,10,29.2,24.7,84.5,76.7,93.5,18.8,Cabo Verde FY2020; Sao Tome and Principe FY2024; Afghanistan FY2024; Caribbean FY2026; Kiribati FY2022
-misstate_25pct,10,28.3,2.8,9.9,0.0,23.1,1.2,Angola FY2020; Armenia FY2022; Benin FY2020; Burkina Faso FY2023; Cabo Verde FY2020
-stale_repeat,10,28.9,28.9,100.0,100.0,100.0,12.8,
+spike_x10,10,28.9,22.8,79.1,65.5,92.9,16.8,Comoros FY2025; Sao Tome and Principe FY2022; Albania FY2021; Bolivia FY2022; Cambodia FY2024
+units_x1000,10,29.0,28.2,97.2,92.9,100.0,22.6,Sao Tome and Principe FY2020; Central Africa FY2023; Sao Tome and Principe FY2020; Central Africa FY2021; Bhutan FY2023
+drop_to_zero,10,28.7,25.0,87.2,80.0,96.4,18.6,Angola FY2022; Armenia FY2023; Cabo Verde FY2025; Georgia FY2020; Guinea FY2023
+misstate_25pct,10,28.1,3.3,11.9,3.1,33.3,2.2,Africa FY2021; Albania FY2021; Bangladesh FY2020; Bhutan FY2021; Bolivia FY2023
+stale_repeat,10,30.3,30.3,100.0,100.0,100.0,11.8,

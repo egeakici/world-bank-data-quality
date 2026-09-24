@@ -54,11 +54,11 @@ Baseline FY2010-FY2019, monitored FY2020-FY2026, FY2027 excluded as an incomplet
 
 | error_type | trials | injected_per_trial | detected_per_trial | recall_pct_mean | recall_pct_min | recall_pct_max | collateral_per_trial |
 |---|---|---|---|---|---|---|---|
-| spike_x10 | 10 | 27.4 | 20.3 | 74.4 | 57.7 | 91.3 | 15.6 |
-| units_x1000 | 10 | 27.7 | 27.2 | 98.2 | 93.3 | 100.0 | 20.9 |
-| drop_to_zero | 10 | 29.2 | 24.7 | 84.5 | 76.7 | 93.5 | 18.8 |
-| misstate_25pct | 10 | 28.3 | 2.8 | 9.9 | 0.0 | 23.1 | 1.2 |
-| stale_repeat | 10 | 28.9 | 28.9 | 100.0 | 100.0 | 100.0 | 12.8 |
+| spike_x10 | 10 | 28.9 | 22.8 | 79.1 | 65.5 | 92.9 | 16.8 |
+| units_x1000 | 10 | 29.0 | 28.2 | 97.2 | 92.9 | 100.0 | 22.6 |
+| drop_to_zero | 10 | 28.7 | 25.0 | 87.2 | 80.0 | 96.4 | 18.6 |
+| misstate_25pct | 10 | 28.1 | 3.3 | 11.9 | 3.1 | 33.3 | 2.2 |
+| stale_repeat | 10 | 30.3 | 30.3 | 100.0 | 100.0 | 100.0 | 11.8 |
 
 Error types:
 
@@ -76,8 +76,8 @@ One row per method version and split (`experiments/ledger.csv`). Blank precision
 |---|---|---|---|---|---|---|---|---|---|---|
 | v1-frozen-baseline | holdout | 8.9 | 0 |  |  | 79.1 | 97.2 | 87.2 | 11.9 | 0.0 |
 | v1-frozen-baseline | tuning | 8.9 | 0 |  |  | 74.4 | 98.2 | 84.5 | 9.9 | 0.0 |
-| v1.1-quick-fixes | holdout | 8.9 | 0 |  |  | 79.1 | 97.2 | 87.2 | 11.9 | 100.0 |
 | v1.1-quick-fixes | tuning | 8.9 | 0 |  |  | 74.4 | 98.2 | 84.5 | 9.9 | 100.0 |
+| v1.1-quick-fixes | holdout | 8.9 | 0 |  |  | 79.1 | 97.2 | 87.2 | 11.9 | 100.0 |
 
 ## 5. Figures
 
